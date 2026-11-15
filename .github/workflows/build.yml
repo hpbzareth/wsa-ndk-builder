@@ -1,0 +1,52 @@
+name: Build WSA System Image with Google libndk_translation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-utils e2fsprogs attr p7zip-full curl wget python3
+
+      - name: Run build script
+        run: |
+          sudo python3 build.py
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-ndk-translation
+          path: system_ndk_translation.7z
+          retention-days: 7
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: WSA System Image with Google libndk_translation (Build ${{ github.run_number }})
+          body: |
+            ## WSA System Image with Google libndk_translation (Android 13)
+            - Base: WSA 2407.40000.4.0 x86_64
+            - NativeBridge: Google `libndk_translation` (Android 13)
+            - Replaces Intel Houdini directly inside `system.vhdx`
+            - Tested for compatibility with ARM64 applications (e.g. Banking apps, Flutter)
+            
+            ### Usage:
+            1. Stop WSA completely (`wsaclient.exe /shutdown` or via WSA Settings).
+            2. Backup your original `C:\<WSA_DIR>\system.vhdx`.
+            3. Extract `system.vhdx` from this archive into your WSA directory, replacing the original.
+            4. Start WSA. Your user data in `userdata.vhdx` will remain completely safe.
+          files: system_ndk_translation.7z
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
