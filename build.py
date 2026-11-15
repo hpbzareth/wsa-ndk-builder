@@ -100,33 +100,38 @@ def main():
         print("[SELINUX] Setting ownership and security.selinux contexts...")
         run(f"chown -R 0:0 {mnt_dir}")
 
-        for root, dirs, files in os.walk(mnt_dir):
+        system_dir = os.path.join(mnt_dir, "system")
+        for root, dirs, files in os.walk(system_dir):
             for d in dirs:
                 full_d = os.path.join(root, d)
-                os.chmod(full_d, 0o755)
+                if os.path.islink(full_d):
+                    continue
                 try:
-                    os.setxattr(full_d, "security.selinux", b"u:object_r:system_file:s0\x00")
+                    os.chmod(full_d, 0o755)
+                    os.setxattr(full_d, "security.selinux", b"u:object_r:system_file:s0\x00", follow_symlinks=False)
                 except Exception:
                     pass
 
             for f in files:
                 full_f = os.path.join(root, f)
-                rel = os.path.relpath(full_f, mnt_dir).replace("\\", "/")
+                if os.path.islink(full_f):
+                    continue
+                rel = os.path.relpath(full_f, system_dir).replace("\\", "/")
                 
-                if "/bin/" in rel:
-                    os.chmod(full_f, 0o755)
-                    ctx = b"u:object_r:system_file:s0\x00"
-                elif "/lib64/" in rel or "/lib/" in rel:
-                    os.chmod(full_f, 0o644)
-                    ctx = b"u:object_r:system_lib_file:s0\x00"
-                else:
-                    os.chmod(full_f, 0o644)
-                    ctx = b"u:object_r:system_file:s0\x00"
-
                 try:
-                    os.setxattr(full_f, "security.selinux", ctx)
-                except Exception:
-                    pass
+                    if rel.startswith("bin/"):
+                        os.chmod(full_f, 0o755)
+                        ctx = b"u:object_r:system_file:s0\x00"
+                    elif rel.startswith("lib64/") or rel.startswith("lib/"):
+                        os.chmod(full_f, 0o644)
+                        ctx = b"u:object_r:system_lib_file:s0\x00"
+                    else:
+                        os.chmod(full_f, 0o644)
+                        ctx = b"u:object_r:system_file:s0\x00"
+
+                    os.setxattr(full_f, "security.selinux", ctx, follow_symlinks=False)
+                except Exception as e:
+                    print(f"Warning: could not process {full_f}: {e}")
 
         print("[INJECT] Complete.")
 
