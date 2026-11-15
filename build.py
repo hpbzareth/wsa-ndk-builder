@@ -7,8 +7,8 @@ import urllib.request
 import re
 
 WSA_7Z_URL = "https://github.com/MustardChef/WSABuilds/releases/download/Windows_11_2407.40000.4.0_LTS_8/WSA_2407.40000.4.0_x64_Release-Nightly-NoGApps-NoAmazon.7z"
-NDK_12_URL = "https://github.com/zhouziyang/libndk_translation/releases/download/12.0.0/libndk_translation-12.0.0.tar"
-NDK_11_URL = "https://github.com/zhouziyang/libndk_translation/releases/download/11.0.0/libndk_translation-11.0.0.tar"
+NDK_12_URL = "https://raw.githubusercontent.com/zhouziyang/libndk_translation/master/libndk_translation-12.0.0.tar"
+NDK_11_URL = "https://raw.githubusercontent.com/zhouziyang/libndk_translation/master/libndk_translation-11.0.0.tar"
 
 def run(cmd, check=True):
     print(f"[RUN] {cmd}")
